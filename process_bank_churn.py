@@ -51,14 +51,14 @@ def encode_categorical(train_df: pd.DataFrame, val_df: pd.DataFrame, cat_cols: L
         
     return train_df, val_df, encoder
 
-def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = True) -> Dict[str, Any]:
+def preprocess_data(target_col: Any, drop_cols: List, cat_cols: List, raw_df: pd.DataFrame, scaler_numeric: bool = True) -> Dict[str, Any]:
     """Основна функція, що координує весь процес препроцесингу для навчання."""
     # Створюємо ознаки
     df = create_features(raw_df)
     
     # Визначаємо колонки
-    target_col = 'Exited'
-    drop_cols = [target_col, 'id', 'CustomerId', 'Surname']
+    target_col = target_col
+    drop_cols = [target_col] + drop_cols
     input_cols = [col for col in df.columns if col not in drop_cols]
     
     # Розбиття
@@ -72,7 +72,7 @@ def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = True) -> Dict[s
     val_targets = val_df[target_col].copy()
     
     # Кодування
-    cat_cols = ['Geography', 'Clients loyality', 'AgeGroup']
+    cat_cols = cat_cols
     train_inputs, val_inputs, encoder = encode_categorical(train_inputs, val_inputs, cat_cols)
     
     # Масштабування (опціонально)
@@ -90,17 +90,17 @@ def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = True) -> Dict[s
         'encoder': encoder,
         'input_cols': train_inputs.columns.tolist()
     }
-
-def preprocess_new_data(test_df: pd.DataFrame, scaler: Optional[StandardScaler], encoder: OneHotEncoder) -> pd.DataFrame:
+    
+def preprocess_new_data(drop_cols: List, cat_cols: List, test_df: pd.DataFrame, scaler: Optional[StandardScaler], encoder: OneHotEncoder) -> pd.DataFrame:
     """Обробляє нові дані (тестові) за допомогою вже навчених скейлера та енкодера."""
     df = create_features(test_df)
     
     # Видаляємо зайве
-    drop_cols = ['id', 'CustomerId', 'Surname']
+    drop_cols = drop_cols
     df = df.drop(columns=[col for col in drop_cols if col in df.columns], errors='ignore')
     
     # Кодування
-    cat_cols = ['Geography', 'Clients loyality', 'AgeGroup']
+    cat_cols = cat_cols
     encoded_cols = list(encoder.get_feature_names_out(cat_cols))
     df[encoded_cols] = encoder.transform(df[cat_cols])
     df.drop(columns=cat_cols, inplace=True)
